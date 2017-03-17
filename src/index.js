@@ -46,11 +46,9 @@ router
   .post('/', async (ctx) => {
     const { url  } = ctx.request.body;
 
-    const row = await db.oneOrNone('SELECT id FROM data WHERE url = $1', url);
-    let id;
-    if (row) {
-      id = row.id;
-    } else {
+    const id = await db.oneOrNone('SELECT id FROM data WHERE url = $1', url, a => a && a.id);
+  
+    if (!id) {
       id = shortId(url);
       await db.none('INSERT INTO data (url, id) VALUES ($1, $2)', [url, id]);
     }
@@ -60,9 +58,8 @@ router
     };
   })
   .get('/:id', async (ctx) => {
-    const row = await db.oneOrNone('SELECT url FROM data WHERE id = $1', ctx.params.id);
-    if (row) {
-      let url = row.url;
+    const url = await db.oneOrNone('SELECT url FROM data WHERE id = $1', ctx.params.id, a => a && a.url);
+    if (url) {
       if (!url.startsWith('http')) {
         url = 'http://' + url;
       }
